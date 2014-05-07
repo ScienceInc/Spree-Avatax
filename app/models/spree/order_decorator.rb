@@ -47,7 +47,7 @@ module Spree
 
               invoice = Avalara::Request::Invoice.new(
                 :customer_code => self.email,
-                :doc_date => Date.today,
+                :doc_date => self.completed_at,
                 :doc_type => 'SalesInvoice',
                 :company_code => AvataxConfig.company_code,
                 :doc_code => self.number,
@@ -57,7 +57,7 @@ module Spree
 
               invoice.addresses = invoice_addresses
               invoice.lines = invoice_lines
-              
+
               #Log request
               logger.debug 'Avatax Request - '
               logger.debug invoice.to_s
@@ -68,12 +68,10 @@ module Spree
               logger.debug 'Avatax Response - '
               logger.debug invoice_tax.to_s
             rescue => error
+              Honeybadger.notify(error)
               logger.debug 'Avatax Commit Failed!'
               logger.debug error.to_s
             end
-        
       end
-
-
   end
 end
