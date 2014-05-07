@@ -47,7 +47,7 @@ module Spree
 
               invoice = Avalara::Request::Invoice.new(
                 :customer_code => self.email,
-                :doc_date => self.completed_at,
+                :doc_date => self.completed_at.to_date,
                 :doc_type => 'SalesInvoice',
                 :company_code => AvataxConfig.company_code,
                 :doc_code => self.number,
