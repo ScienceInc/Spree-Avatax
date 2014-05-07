@@ -14,7 +14,7 @@ module Spree
               matched_line_items = self.line_items.select do |line_item|
                 line_item.avataxable
               end
-
+              return if matched_line_items.blank?
               invoice_lines =[]
               line_count = 0
 
