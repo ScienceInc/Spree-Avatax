@@ -27,7 +27,8 @@ module Spree
               Avalara.username = AvataxConfig.username
               Avalara.endpoint = AvataxConfig.endpoint
 
-              matched_line_items = order.line_items.select do |line_item|
+              items = order.line_items.select{|li| li.product.respond_to?(:is_gift_card?) ? (not li.product.is_gift_card?) : true }
+              matched_line_items = items.select do |line_item|
                 line_item.product.tax_category == rate.tax_category
               end
 
@@ -86,7 +87,8 @@ module Spree
               invoice_tax.total_tax
 
             rescue
-              matched_line_items = order.line_items.select do |line_item|
+              items = order.line_items.select{|li| li.product.respond_to?(:is_gift_card?) ? (not li.product.is_gift_card?) : true }
+              matched_line_items = items.select do |line_item|
                 line_item.product.tax_category == rate.tax_category
               end
               line_items_total = matched_line_items.sum(&:total)
