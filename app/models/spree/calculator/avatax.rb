@@ -28,6 +28,7 @@ module Spree
               Avalara.endpoint = AvataxConfig.endpoint
 
               items = order.line_items.select{|li| li.product.respond_to?(:is_gift_card?) ? (not li.product.is_gift_card?) : true }
+              return 0 if items.empty?
               matched_line_items = items.select do |line_item|
                 line_item.product.tax_category == rate.tax_category
               end
