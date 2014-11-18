@@ -35,7 +35,7 @@ module Spree
               line_count = 0
 
               discount = 0
-              credits = order.adjustments.select {|a| a.amount<0}
+              credits = order.adjustments.select{|a|a.amount < 0 && a.originator_type != 'Spree::GiftCard'}
               discount = -(credits.sum &:amount)
               matched_line_items.each do |matched_line_item|
                 line_count = line_count + 1
@@ -83,17 +83,19 @@ module Spree
 
               #Log Response
               logger.debug invoice_tax.to_s
-              invoice_tax.total_tax
+              tax = invoice_tax.total_tax
 
-            rescue
+            rescue => e
+              Honeybadger.notify(e)
               matched_line_items = order.line_items.select do |line_item|
                 line_item.product.tax_category == rate.tax_category
               end
               line_items_total = matched_line_items.sum(&:total)
-              credits = order.adjustments.select {|a| a.amount < 0}
+              credits = order.adjustments.select{|a|a.amount < 0 && a.originator_type != 'Spree::GiftCard'}
               line_items_total += (credits.sum &:amount)
-              round_to_two_places(line_items_total * rate.amount)
+              tax = round_to_two_places(line_items_total * rate.amount)
             end
+            tax<0 ? 0 : tax
           end
 
           def compute_line_item(line_item)
