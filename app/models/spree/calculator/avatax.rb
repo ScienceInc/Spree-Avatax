@@ -22,6 +22,7 @@ module Spree
 
           def compute_order(order)
             #Use Avatax lookup and if fails fall back to default Spree taxation rules
+            tax = 0
             begin
               Avalara.password = AvataxConfig.password
               Avalara.username = AvataxConfig.username
@@ -86,7 +87,6 @@ module Spree
               #Log Response
               logger.debug invoice_tax.to_s
               tax = invoice_tax.total_tax
-
             rescue
               items = order.line_items.select{|li| li.product.respond_to?(:is_gift_card?) ? (not li.product.is_gift_card?) : true }
               matched_line_items = items.select do |line_item|
@@ -97,7 +97,7 @@ module Spree
               line_items_total += (credits.sum &:amount)
               tax = round_to_two_places(line_items_total * rate.amount)
             end
-            tax<0 ? 0 : tax
+            tax.to_f<0 ? 0 : tax
           end
 
           def compute_line_item(line_item)
