@@ -14,7 +14,7 @@ module Spree
               matched_line_items = self.line_items.select do |line_item|
                 line_item.avataxable
               end
-
+              return if matched_line_items.blank?
               invoice_lines =[]
               line_count = 0
 
@@ -47,7 +47,7 @@ module Spree
 
               invoice = Avalara::Request::Invoice.new(
                 :customer_code => self.email,
-                :doc_date => self.completed_at,
+                :doc_date => self.completed_at.to_date,
                 :doc_type => 'SalesInvoice',
                 :company_code => AvataxConfig.company_code,
                 :doc_code => self.number,
