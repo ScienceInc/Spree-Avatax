@@ -9,7 +9,9 @@ module Spree
               Avalara.password = AvataxConfig.password
               Avalara.username = AvataxConfig.username
               Avalara.endpoint = AvataxConfig.endpoint
-              
+
+              return if self.respond_to?(:wholesale?) and self.wholesale?
+
               #Only send the line items that return true for avataxable
               matched_line_items = self.line_items.select do |line_item|
                 line_item.avataxable
@@ -19,7 +21,7 @@ module Spree
               line_count = 0
 
               discount = 0
-              credits = self.adjustments.select{|a|a.amount < 0 && a.originator_type != 'Spree::GiftCard'}
+              credits = self.adjustments.select{|a|a.amount < 0 && a.originator_type != 'Spree::GiftCard' && a.lowers_tax? }
               discount = -(credits.sum &:amount)
               matched_line_items.each do |matched_line_item|
                 line_count = line_count + 1

@@ -23,6 +23,10 @@ module Spree
           def compute_order(order)
             #Use Avatax lookup and if fails fall back to default Spree taxation rules
             tax = 0
+
+            # we don't tax wholesale orders
+            return 0 if order.respond_to?(:wholesale?) and order.wholesale?
+
             begin
               Avalara.password = AvataxConfig.password
               Avalara.username = AvataxConfig.username
@@ -38,7 +42,7 @@ module Spree
               line_count = 0
 
               discount = 0
-              credits = order.adjustments.select{|a|a.amount < 0 && a.originator_type != 'Spree::GiftCard'}
+              credits = order.adjustments.select{|a|a.amount < 0 && a.originator_type != 'Spree::GiftCard' && a.lowers_tax? }
               discount = -(credits.sum &:amount)
               matched_line_items.each do |matched_line_item|
                 line_count = line_count + 1
