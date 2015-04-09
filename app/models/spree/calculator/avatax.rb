@@ -42,7 +42,7 @@ module Spree
               line_count = 0
 
               discount = 0
-              credits = order.adjustments.select{|a|a.amount < 0 && a.originator_type != 'Spree::GiftCard' && a.lowers_tax? }
+              credits = order.adjustments.select{|a|a.amount < 0 && a.originator_type != 'Spree::GiftCard' && a.lowers_tax? && a.eligible }
               discount = -(credits.sum &:amount)
               matched_line_items.each do |matched_line_item|
                 line_count = line_count + 1
