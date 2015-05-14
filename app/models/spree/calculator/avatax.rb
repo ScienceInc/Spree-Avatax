@@ -21,6 +21,10 @@ module Spree
           end
 
           def compute_order(order)
+            compute_from_parts(order, order.line_items, order.adjustments)
+          end
+
+          def compute_from_parts(order, line_items, adjustments)
             #Use Avatax lookup and if fails fall back to default Spree taxation rules
             tax = 0
 
@@ -32,7 +36,7 @@ module Spree
               Avalara.username = AvataxConfig.username
               Avalara.endpoint = AvataxConfig.endpoint
 
-              items = order.line_items.select{|li| li.product.respond_to?(:is_gift_card?) ? (not li.product.is_gift_card?) : true }
+              items = line_items.select{|li| li.product.respond_to?(:is_gift_card?) ? (not li.product.is_gift_card?) : true }
               return 0 if items.empty?
               matched_line_items = items.select do |line_item|
                 line_item.product.tax_category == rate.tax_category
@@ -42,7 +46,7 @@ module Spree
               line_count = 0
 
               discount = 0
-              credits = order.adjustments.select{|a|a.amount < 0 && a.originator_type != 'Spree::GiftCard' && a.lowers_tax? && a.eligible }
+              credits = adjustments.select{|a|a.amount < 0 && a.originator_type != 'Spree::GiftCard' && a.lowers_tax? && a.eligible }
               discount = -(credits.sum &:amount)
               matched_line_items.each do |matched_line_item|
                 line_count = line_count + 1
@@ -92,12 +96,12 @@ module Spree
               logger.debug invoice_tax.to_s
               tax = invoice_tax.total_tax
             rescue
-              items = order.line_items.select{|li| li.product.respond_to?(:is_gift_card?) ? (not li.product.is_gift_card?) : true }
+              items = line_items.select{|li| li.product.respond_to?(:is_gift_card?) ? (not li.product.is_gift_card?) : true }
               matched_line_items = items.select do |line_item|
                 line_item.product.tax_category == rate.tax_category
               end
               line_items_total = matched_line_items.sum(&:total)
-              credits = order.adjustments.select{|a|a.amount < 0 && a.originator_type != 'Spree::GiftCard'}
+              credits = adjustments.select{|a|a.amount < 0 && a.originator_type != 'Spree::GiftCard'}
               line_items_total += (credits.sum &:amount)
               tax = round_to_two_places(line_items_total * rate.amount)
             end
@@ -105,16 +109,18 @@ module Spree
           end
 
           def compute_line_item(line_item)
+            tax = 0
             #Use Avatax lookup and if fails fall back to default Spree taxation rules
             begin
-              #TODO-  Line Item Lookup
+              tax = compute_from_parts(line_item.order, [line_item], [])
             rescue
               if line_item.product.tax_category == rate.tax_category
-                deduced_total_by_rate(line_item.total, rate)
+                tax = deduced_total_by_rate(line_item.total, rate)
               else
-                0
+                tax = 0
               end
             end
+            tax.to_f<0 ? 0 : tax
           end
 
           def round_to_two_places(amount)
